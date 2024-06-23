@@ -22,6 +22,7 @@ import {
   horizontalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
+import { mkConfig, generateCsv, download } from "export-to-csv"; //or use your library of choice here
 
 import {
   Button,
@@ -258,6 +259,12 @@ const DragAlongCell = (props) => {
   );
 };
 
+const csvConfig = mkConfig({
+  fieldSeparator: ",",
+  decimalSeparator: ".",
+  useKeysAsHeaders: true,
+});
+
 const TableDndApp = () => {
   const columns = useMemo(
     () => [
@@ -335,10 +342,20 @@ const TableDndApp = () => {
     useSensor(KeyboardSensor, {}),
   );
 
+  const handleExportRows = (rows) => {
+    const rowData = rows.map((row) => row.original);
+    const csv = generateCsv(csvConfig)(rowData);
+    download(csvConfig)(csv);
+  };
+
+  console.log({ row: tableElement });
   return (
     <TableContainer as={Paper} sx={{ width: "100%" }}>
       <Typography>Drag N Drop Column</Typography>
       <Button onClick={() => tableElement.reset()}>Reset Data</Button>
+      <Button onClick={() => handleExportRows(tableElement.getRowModel().rows)}>
+        Print Rows
+      </Button>
       <DndContext
         collisionDetection={closestCenter}
         modifiers={[restrictToHorizontalAxis]}
