@@ -22,6 +22,7 @@ import {
   horizontalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
+import { mkConfig, generateCsv, download } from "export-to-csv"; //or use your library of choice here
 
 import {
   Button,
@@ -258,7 +259,61 @@ const DragAlongCell = (props) => {
   );
 };
 
+const csvConfig = mkConfig({
+  fieldSeparator: ",",
+  decimalSeparator: ".",
+  useKeysAsHeaders: true,
+});
+
 const TableDndApp = () => {
+  const groupColumns = useMemo(
+    () => [
+      {
+        header: "Name",
+        columns: [
+          {
+            accessorKey: "firstName",
+            cell: (info) => info.getValue(),
+            id: "firstName",
+            size: 150,
+          },
+          {
+            accessorFn: (row) => row.lastName,
+            cell: (info) => info.getValue(),
+            header: () => <span>Last Name</span>,
+            id: "lastName",
+            size: 150,
+          },
+        ],
+      },
+      {
+        accessorKey: "age",
+        header: () => "Age",
+        id: "age",
+        size: 120,
+      },
+      {
+        accessorKey: "visits",
+        header: () => <span>Visits</span>,
+        id: "visits",
+        size: 120,
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        id: "status",
+        size: 150,
+      },
+      {
+        accessorKey: "progress",
+        header: "Profile Progress",
+        id: "progress",
+        size: 180,
+      },
+    ],
+    [],
+  );
+
   const columns = useMemo(
     () => [
       {
@@ -309,7 +364,7 @@ const TableDndApp = () => {
 
   const tableElement = useReactTable({
     data,
-    columns,
+    columns: columns,//groupColumns 
     getCoreRowModel: getCoreRowModel(),
     state: {
       columnOrder,
@@ -335,10 +390,19 @@ const TableDndApp = () => {
     useSensor(KeyboardSensor, {}),
   );
 
+  const handleExportRows = (rows) => {
+    const rowData = rows.map((row) => row.original);
+    const csv = generateCsv(csvConfig)(rowData);
+    download(csvConfig)(csv);
+  };
+
   return (
     <TableContainer as={Paper} sx={{ width: "100%" }}>
       <Typography>Drag N Drop Column</Typography>
       <Button onClick={() => tableElement.reset()}>Reset Data</Button>
+      <Button onClick={() => handleExportRows(tableElement.getRowModel().rows)}>
+        Print Rows
+      </Button>
       <DndContext
         collisionDetection={closestCenter}
         modifiers={[restrictToHorizontalAxis]}
